@@ -51,15 +51,14 @@ class GildedRose
   # Custom rules for tickets, since they are so different
   def update_tickets(item)
     decay_sell_in(item)
-    case item.sell_in 
-      when 0
-        item.quality = 0
-      when item.sell_in.positive? && item.sell_in <= 5
-        decay_quality(item, -3)
-      when item.sell_in > 5 && item.sell_in <= 10
-        decay_quality(item, -2)
-      else
-        decay_quality(item, -@@decay_rate)
+    if item.sell_in == 0
+      item.quality = 0
+    elsif item.sell_in.positive? && item.sell_in <= 5
+      decay_quality(item, 3)
+    elsif item.sell_in > 5 && item.sell_in <= 10
+      decay_quality(item, 2)
+    else
+      decay_quality(item, -@@decay_rate)
     end
   end
 end
