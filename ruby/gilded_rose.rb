@@ -1,4 +1,8 @@
 class GildedRose
+  
+  # Making decay rate a class variable so it can easily be updated. 
+  # Sell in can be hard coded, since there is no way to skip days to sell in date.
+  @@decay_rate = -1
 
   def initialize(items)
     @items = items
@@ -6,49 +10,56 @@ class GildedRose
 
   def update_quality()
     @items.each do |item|
-      if item.name != "Aged Brie" and item.name != "Backstage passes to a TAFKAL80ETC concert"
-        if item.quality > 0
-          if item.name != "Sulfuras, Hand of Ragnaros"
-            item.quality = item.quality - 1
-          end
-        end
-      else 
-        if item.quality < 50
-          item.quality = item.quality + 1
-          if item.name == "Backstage passes to a TAFKAL80ETC concert"
-            if item.sell_in < 11
-              if item.quality < 50
-                item.quality = item.quality + 1
-              end
-            end
-            if item.sell_in < 6
-              if item.quality < 50
-                item.quality = item.quality + 1
-              end
-            end
-          end
-        end
-      end
-      if item.name != "Sulfuras, Hand of Ragnaros"
-        item.sell_in = item.sell_in - 1
-      end
-      if item.sell_in < 0
-        if item.name != "Aged Brie"
-          if item.name != "Backstage passes to a TAFKAL80ETC concert"
-            if item.quality > 0
-              if item.name != "Sulfuras, Hand of Ragnaros"
-                item.quality = item.quality - 1
-              end
-            end
-          else
-            item.quality = item.quality - item.quality
-          end
+      case item.name
+        when "Aged Brie"
+          decay_sell_in(item)
+          decay_quality(item, -@@decay_rate)
+        when "Sulfuras, Hand of Ragnaros"
+          next
+        when "Backstage passes to a TAFKAL80ETC concert"
+          update_tickets(item)
+        when "Conjured"
+          decay_sell_in(item)
+          decay_quality(item, 2 * @@decay_rate)
         else
-          if item.quality < 50
-            item.quality = item.quality + 1
-          end
-        end
+          decay_sell_in(item)
+          decay_quality(item, @@decay_rate)
       end
+
+    end
+  end
+
+  private
+
+  # Making these separate methods to DRY up the code
+  def decay_quality(item, rate)
+    if item.sell_in.zero?
+      item.quality += 2 * rate
+    else
+      item.quality += rate
+    end
+
+    item.quality = 50 if item.quality > 50
+    item.quality = 0 if item.quality < 0
+  end
+
+  def decay_sell_in(item)
+    item.sell_in -= 1
+    item.sell_in = 0 if item.sell_in.negative?
+  end
+
+  # Custom rules for tickets, since they are so different
+  def update_tickets(item)
+    decay_sell_in(item)
+    case item.sell_in 
+      when 0
+        item.quality = 0
+      when item.sell_in.positive? && item.sell_in <= 5
+        decay_quality(item, -3)
+      when item.sell_in > 5 && item.sell_in <= 10
+        decay_quality(item, -2)
+      else
+        decay_quality(item, -@@decay_rate)
     end
   end
 end
